@@ -23,7 +23,7 @@ cd grid-trading-backtest
 
 ### 2. 安装依赖
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.yaml
 ```
 
 ### 3. 数据准备
