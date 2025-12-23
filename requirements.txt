@@ -1,0 +1,8 @@
+pandas>=1.5.0
+numpy>=1.23.0
+matplotlib>=3.6.0
+scikit-learn>=1.2.0
+
+# 可选：机器学习扩展（用于LSTM智能网格策略）
+# tensorflow>=2.10.0  # 取消注释以启用LSTM功能
+
