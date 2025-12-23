@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 数据文件（太大，不上传）
+*.csv
+*.rar
+*.zip
+*.7z
+上证信息数据2024/
+his_sh1_201907-202406/
+
+# 输出文件
+*.png
+*.pdf
+*.pptx
+*.docx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.log
+*.tmp
