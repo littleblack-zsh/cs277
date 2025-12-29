@@ -676,4 +676,125 @@ if __name__ == "__main__":
 
     # 参数敏感性分析（选股期数据）
     plot_step_performance(result_df)
+
+
+# ==========================
+# Moving Average Crossover Strategy
+# ==========================
+def run_ma_crossover_backtest(
+    price_df: pd.DataFrame,
+    short_window: int = 5,
+    long_window: int = 20,
+    total_capital: float = 100000.0
+) -> tuple:
+    """
+    移动平均交叉策略回测
+    
+    策略逻辑：
+    - 当短期均线上穿长期均线（金叉）时，全仓买入
+    - 当短期均线下穿长期均线（死叉）时，全仓卖出
+    
+    参数：
+        price_df: 价格数据，必须包含 'Date' 和 'LastPx' 列
+        short_window: 短期移动平均窗口（天数）
+        long_window: 长期移动平均窗口（天数）
+        total_capital: 初始资金
+    
+    返回：
+        equity_df: 资产曲线DataFrame
+        trades_df: 交易记录DataFrame
+    """
+    df = price_df.copy()
+    df = df.sort_values("Date").reset_index(drop=True)
+    
+    # 计算移动平均线
+    df['MA_Short'] = df['LastPx'].rolling(window=short_window).mean()
+    df['MA_Long'] = df['LastPx'].rolling(window=long_window).mean()
+    
+    # 初始化
+    cash = total_capital
+    position = 0.0  # 持有股数
+    
+    equity_records = []
+    trade_records = []
+    
+    prev_signal = None  # 上一个信号：None, 'buy', 'sell'
+    
+    for i in range(len(df)):
+        date = df.loc[i, 'Date']
+        price = df.loc[i, 'LastPx']
+        ma_short = df.loc[i, 'MA_Short']
+        ma_long = df.loc[i, 'MA_Long']
+        
+        # 需要足够的数据才能产生信号
+        if pd.isna(ma_short) or pd.isna(ma_long):
+            equity = cash + position * price
+            equity_records.append({
+                'Date': date,
+                'ClosePrice': price,
+                'Cash': cash,
+                'Position': position,
+                'Equity': equity
+            })
+            continue
+        
+        # 检测交叉信号
+        signal = None
+        if ma_short > ma_long:
+            signal = 'buy'
+        elif ma_short < ma_long:
+            signal = 'sell'
+        
+        # 执行交易
+        if signal == 'buy' and prev_signal != 'buy' and position == 0:
+            # 金叉且当前空仓：全仓买入
+            shares_to_buy = cash // price  # 只买整数股
+            if shares_to_buy > 0:
+                cost = shares_to_buy * price
+                cash -= cost
+                position += shares_to_buy
+                
+                trade_records.append({
+                    'Date': date,
+                    'Side': 'BUY',
+                    'Price': price,
+                    'Shares': shares_to_buy,
+                    'Amount': cost,
+                    'Cash': cash,
+                    'Position': position
+                })
+        
+        elif signal == 'sell' and prev_signal != 'sell' and position > 0:
+            # 死叉且当前持仓：全仓卖出
+            shares_to_sell = position
+            revenue = shares_to_sell * price
+            cash += revenue
+            position = 0
+            
+            trade_records.append({
+                'Date': date,
+                'Side': 'SELL',
+                'Price': price,
+                'Shares': shares_to_sell,
+                'Amount': revenue,
+                'Cash': cash,
+                'Position': position
+            })
+        
+        prev_signal = signal
+        
+        # 记录当日资产
+        equity = cash + position * price
+        equity_records.append({
+            'Date': date,
+            'ClosePrice': price,
+            'Cash': cash,
+            'Position': position,
+            'Equity': equity
+        })
+    
+    equity_df = pd.DataFrame(equity_records)
+    trades_df = pd.DataFrame(trade_records)
+    
+    return equity_df, trades_df
     
